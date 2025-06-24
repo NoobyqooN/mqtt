@@ -1,0 +1,56 @@
+import paho.mqtt.client as mqtt
+import time
+import RPi.GPIO as GPIO
+#import RPi_I2C_driver
+
+# Setup the LCD (16x2 display with I2C)
+#mylcd = RPi_I2C_driver.lcd(0x20)
+
+# Set the MQTT Broker details
+BROKER = "10.10.10.40"  # Replace with your broker IP or domain
+PORT = 1883
+TOPIC_TEMP = "GEC/ETCME/44/temperature"
+TOPIC_HUMIDITY = "GEC/ETCME/44/humidity"
+
+# Initialize global variables for temp and humidity
+temp = " "
+humidity = " "
+
+# Callback function when message is received
+def on_message(client, userdata, msg):
+    global temp, humidity
+    if msg.topic == TOPIC_TEMP:
+        temp = float(msg.payload.decode())
+    elif msg.topic == TOPIC_HUMIDITY:
+        humidity = float(msg.payload.decode())
+
+    # Display on LCD if both values are available
+    if temp is not None and humidity is not None:
+        #mylcd.lcd_clear()
+        #mylcd.lcd_display_string(f"Temp:{temp}C" ,1)
+        #mylcd.lcd_display_string(f"Humidity:{humidity}%",2)
+        print(f"Temp: {temp}C")
+        print(f"Humidity: {humidity}%")
+
+# Setup the MQTT client
+client = mqtt.Client()
+client.on_message = on_message
+# Connect to the broker
+client.connect(BROKER, PORT, 60)
+
+# Subscribe to the topics
+client.subscribe(TOPIC_TEMP)
+client.subscribe(TOPIC_HUMIDITY)
+
+# Start the loop to listen for messages
+client.loop_start()
+
+try:
+    while True:
+        time.sleep(1)  # Sleep to allow the program to run continuously
+except KeyboardInterrupt:
+    print("Disconnected.")
+    client.loop_stop()
+    lcd.clear()
+
+
